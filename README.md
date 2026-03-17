@@ -5,7 +5,7 @@ AI-powered portfolio intelligence platform for Canadian investors. Upload broker
 ## Architecture
 
 ```
-cokit-test/
+wealthlens/
 ├── app/
 │   ├── client/          # Next.js 15 frontend (React 19, TypeScript)
 │   └── server/          # Python FastAPI backend (LangChain, GPT-4o)
