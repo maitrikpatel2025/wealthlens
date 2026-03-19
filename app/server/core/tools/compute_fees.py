@@ -1,8 +1,10 @@
 """MER/fee analysis tool with low-cost alternative suggestions."""
 
+from core.tools.filter_utils import FILTER_SCHEMA_PROPERTIES
+
 COMPUTE_FEES_SCHEMA = {
     "name": "compute_fees",
-    "description": "Analyze management expense ratios (MERs) and trading fees across holdings. Returns fee breakdown by fund. Set show_alternatives=true to flag high-cost holdings and suggest lower-cost ETF alternatives.",
+    "description": "Analyze management expense ratios (MERs) and trading fees across holdings. Returns fee breakdown by fund. Set show_alternatives=true to flag high-cost holdings and suggest lower-cost ETF alternatives. Supports optional filter to narrow analysis.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -10,6 +12,7 @@ COMPUTE_FEES_SCHEMA = {
                 "type": "boolean",
                 "description": "When true, flag holdings with MER > 0.50% and suggest lower-cost ETF alternatives with estimated 10-year savings.",
             },
+            **FILTER_SCHEMA_PROPERTIES,
         },
         "required": [],
     },
@@ -69,7 +72,8 @@ def _find_alternative(holding: dict) -> dict | None:
 
 def compute_fees(args: dict, state: dict) -> dict:
     """Compute fee analysis from household holdings."""
-    households = state.get("households", [])
+    from core.tools.filter_utils import apply_holding_filter
+    households = apply_holding_filter(state.get("households", []), args.get("filter"))
     show_alternatives = args.get("show_alternatives", False)
 
     if not households:
@@ -89,14 +93,25 @@ def compute_fees(args: dict, state: dict) -> dict:
                 total_value += value
 
                 if mer > 0:
-                    fee_breakdown.append({
+                    item = {
                         "name": holding.get("name", holding.get("symbol", "Unknown")),
                         "symbol": holding.get("symbol", ""),
                         "market_value": round(value, 2),
                         "mer_percent": mer,
                         "annual_fee": round(annual_fee, 2),
                         "account": account.get("name", "Unknown"),
-                    })
+                    }
+                    # Enhanced fee fields (Phase 5)
+                    ger = holding.get("gross_expense_ratio")
+                    if ger and isinstance(ger, (int, float)) and ger > 0:
+                        item["gross_expense_ratio"] = ger
+                    fl = holding.get("front_load")
+                    if fl and isinstance(fl, (int, float)) and fl > 0:
+                        item["front_load"] = fl
+                    dl = holding.get("deferred_load")
+                    if dl and isinstance(dl, (int, float)) and dl > 0:
+                        item["deferred_load"] = dl
+                    fee_breakdown.append(item)
 
     fee_breakdown.sort(key=lambda x: -x["annual_fee"])
     weighted_mer = (total_fees / total_value * 100) if total_value > 0 else 0
@@ -168,6 +183,37 @@ def compute_fees(args: dict, state: dict) -> dict:
             "title": "MER by Holding (%)",
             "data": [{"label": f["symbol"] or f["name"], "value": f["mer_percent"]} for f in fee_breakdown[:10]],
             "confidence": 0.85,
+        })
+
+    # Enhanced fee detail table if any holdings have gross_expense_ratio or load fees
+    has_enhanced = any(f.get("gross_expense_ratio") or f.get("front_load") or f.get("deferred_load") for f in fee_breakdown)
+    if has_enhanced:
+        fee_table_cols = [
+            {"key": "symbol", "label": "Symbol", "format": "text"},
+            {"key": "name", "label": "Name", "format": "text"},
+            {"key": "mer_percent", "label": "Net MER %", "format": "percent"},
+            {"key": "gross_expense_ratio", "label": "Gross ER %", "format": "percent"},
+            {"key": "front_load", "label": "Front Load %", "format": "percent"},
+            {"key": "deferred_load", "label": "Deferred Load %", "format": "percent"},
+            {"key": "annual_fee", "label": "Annual Fee", "format": "currency"},
+        ]
+        fee_table_rows = []
+        for f in fee_breakdown[:15]:
+            fee_table_rows.append({
+                "symbol": f.get("symbol", ""),
+                "name": f.get("name", "")[:25],
+                "mer_percent": f["mer_percent"],
+                "gross_expense_ratio": f.get("gross_expense_ratio", "—"),
+                "front_load": f.get("front_load", "—"),
+                "deferred_load": f.get("deferred_load", "—"),
+                "annual_fee": f["annual_fee"],
+            })
+        new_widgets.append({
+            "type": "table",
+            "title": "Detailed Fee Breakdown",
+            "data": {"columns": fee_table_cols, "rows": fee_table_rows},
+            "gridPosition": {"col": 1, "row": 1, "colSpan": 2},
+            "confidence": 0.8,
         })
 
     if show_alternatives and result.get("high_cost_flags"):

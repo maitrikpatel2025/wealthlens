@@ -1,8 +1,10 @@
 """Asset allocation breakdown tool."""
 
+from core.tools.filter_utils import FILTER_SCHEMA_PROPERTIES
+
 COMPUTE_ALLOCATION_SCHEMA = {
     "name": "compute_allocation",
-    "description": "Compute asset allocation breakdown across all accounts. Returns allocation by asset class, sector, geography/country, market cap, currency, or account type.",
+    "description": "Compute asset allocation breakdown across all accounts. Returns allocation by asset class, sector, geography/country, market cap, currency, or account type. Supports optional filter to narrow analysis.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -11,6 +13,7 @@ COMPUTE_ALLOCATION_SCHEMA = {
                 "enum": ["asset_class", "sector", "country", "market_cap_class", "currency", "account_type", "geographic_exposure"],
                 "description": "How to group the allocation breakdown. 'country' = domicile country, 'geographic_exposure' = where the fund actually invests (e.g., VFV invests in US despite being Canadian-domiciled).",
             },
+            **FILTER_SCHEMA_PROPERTIES,
         },
         "required": [],
     },
@@ -27,7 +30,8 @@ FIELD_ALIASES = {
 
 def compute_allocation(args: dict, state: dict) -> dict:
     """Compute allocation from household holdings."""
-    households = state.get("households", [])
+    from core.tools.filter_utils import apply_holding_filter
+    households = apply_holding_filter(state.get("households", []), args.get("filter"))
     group_by = args.get("group_by", "asset_class")
 
     # Resolve aliases

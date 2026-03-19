@@ -15,7 +15,10 @@ import { ChatPanel } from "./components/chat-panel";
 import { DashboardCanvas } from "./components/dashboard-canvas";
 import { ToolLogs } from "./components/tool-logs";
 import { PdfUpload } from "./components/pdf-upload";
+import { SimulationPanel } from "./components/simulation-panel";
 import { WidgetSpec } from "@/types/widgets";
+import { composeWidgetQuestion, composeDataPointQuestion } from "@/utils/compose-question";
+import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
 
 export default function WealthLensApp() {
   // UI state
@@ -27,6 +30,7 @@ export default function WealthLensApp() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [usage, setUsage] = useState<UsageMeter>({ used: 0, limit: 25 });
   const [conversationTitle, setConversationTitle] = useState<string | undefined>();
+  const [showSimulation, setShowSimulation] = useState(false);
 
   // Resizable panel state
   const [canvasPercent, setCanvasPercent] = useState(60);
@@ -40,6 +44,7 @@ export default function WealthLensApp() {
       widgets: [] as WidgetSpec[],
       tool_logs: [],
       households: [],
+      user_profile: {},
     },
   });
 
@@ -80,7 +85,16 @@ export default function WealthLensApp() {
     };
   }, [isDark]);
 
-  const { sendMessage } = useCopilotChat();
+  const { appendMessage } = useCopilotChat() as any;
+  // useCopilotChat v1.50+ requires TextMessage instances for appendMessage
+  const sendMessage = useCallback(async (msg: { id?: string; role: string; content: string }) => {
+    const textMsg = new TextMessage({
+      id: msg.id || `msg-${Date.now()}`,
+      role: msg.role === "user" ? Role.User : Role.Assistant,
+      content: msg.content,
+    });
+    await appendMessage(textMsg);
+  }, [appendMessage]);
 
   // Handlers
   const handleToggleTheme = useCallback(() => {
@@ -139,8 +153,26 @@ export default function WealthLensApp() {
   }, [setState]);
 
   const handleAskAboutWidget = useCallback((widget: WidgetSpec) => {
-    console.log("Ask about widget:", widget.title);
-  }, []);
+    const question = composeWidgetQuestion(widget);
+    if (!isLoggedIn) handleSignIn();
+    setConversationTitle(question.slice(0, 40) + (question.length > 40 ? "..." : ""));
+    sendMessage({ id: `widget-${Date.now()}`, role: "user", content: question });
+  }, [isLoggedIn, handleSignIn, sendMessage]);
+
+  const handleDataPointClick = useCallback((widget: WidgetSpec, dataPoint: Record<string, any>) => {
+    const question = composeDataPointQuestion(widget, dataPoint);
+    if (!isLoggedIn) handleSignIn();
+    setConversationTitle(question.slice(0, 40) + (question.length > 40 ? "..." : ""));
+    sendMessage({ id: `drill-${Date.now()}`, role: "user", content: question });
+  }, [isLoggedIn, handleSignIn, sendMessage]);
+
+  const handleRunSimulation = useCallback(async (prompt: string) => {
+    setShowSimulation(false);
+    if (!isLoggedIn) handleSignIn();
+    setUsage((prev) => ({ ...prev, used: prev.used + 1 }));
+    setConversationTitle("Simulation");
+    await sendMessage({ id: `sim-${Date.now()}`, role: "user", content: prompt });
+  }, [isLoggedIn, handleSignIn, sendMessage]);
 
   const handleUploadComplete = useCallback((result: any) => {
     setShowUpload(false);
@@ -242,10 +274,13 @@ export default function WealthLensApp() {
           >
             <DashboardCanvas
               widgets={state?.widgets ?? []}
+              households={state?.households ?? []}
               onSuggestionSelect={handleSuggestionSelect}
               onUploadClick={handleUploadClick}
               onRemoveWidget={handleRemoveWidget}
               onAskAboutWidget={handleAskAboutWidget}
+              onDataPointClick={handleDataPointClick}
+              onSimulateClick={(state?.households ?? []).length > 0 ? () => setShowSimulation(true) : undefined}
             />
           </div>
 
@@ -273,6 +308,14 @@ export default function WealthLensApp() {
           onClose={() => setShowUpload(false)}
         />
       )}
+
+      {/* Simulation panel */}
+      <SimulationPanel
+        isOpen={showSimulation}
+        households={state?.households ?? []}
+        onClose={() => setShowSimulation(false)}
+        onRunSimulation={handleRunSimulation}
+      />
     </div>
   );
 }

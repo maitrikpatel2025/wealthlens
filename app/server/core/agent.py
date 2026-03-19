@@ -89,9 +89,24 @@ def _format_messages(state: dict) -> list:
     formatted = []
     tool_desc = _build_tool_descriptions()
     household_summary = _summarize_households(state.get("households", []))
+    user_profile = state.get("user_profile", {})
+    profile_section = ""
+    if user_profile:
+        profile_parts = []
+        if user_profile.get("age"):
+            profile_parts.append(f"Age: {user_profile['age']}")
+        if user_profile.get("risk_tolerance"):
+            profile_parts.append(f"Risk tolerance: {user_profile['risk_tolerance']}")
+        if user_profile.get("goal"):
+            profile_parts.append(f"Goal: {user_profile['goal']}")
+        if user_profile.get("time_horizon"):
+            profile_parts.append(f"Time horizon: {user_profile['time_horizon']} years")
+        if profile_parts:
+            profile_section = f"\n\nUSER PROFILE:\n" + "\n".join(profile_parts)
+
     formatted.append({
         "role": "system",
-        "content": f"{system_prompt}\n\nAVAILABLE TOOLS:\n{tool_desc}\n\nWhen you need to use a tool, respond with a JSON block:\n```json\n{{\"tool\": \"tool_name\", \"args\": {{...}}}}\n```\n\nWhen you have enough information to respond to the user, just respond in plain text.\n\nPORTFOLIO DATA:\n{household_summary}\n\nCurrent widgets: {len(state.get('widgets', []))} widgets on dashboard."
+        "content": f"{system_prompt}\n\nAVAILABLE TOOLS:\n{tool_desc}\n\nWhen you need to use a tool, respond with a JSON block:\n```json\n{{\"tool\": \"tool_name\", \"args\": {{...}}}}\n```\n\nWhen you have enough information to respond to the user, just respond in plain text.\n\nPORTFOLIO DATA:\n{household_summary}{profile_section}\n\nCurrent widgets: {len(state.get('widgets', []))} widgets on dashboard."
     })
 
     for msg in state.get("messages", []):
@@ -120,14 +135,26 @@ async def planner_node(state: WealthLensState, config: dict) -> dict:
     return {"messages": updated_messages}
 
 
+MAX_TOOL_LOOPS = 6  # safety limit to prevent infinite planner→tool cycles
+
+
 def router(state: WealthLensState) -> Literal["execute_tool", "respond"]:
     """
     Route based on planner output.
     If the assistant's last message contains a tool call JSON block, route to execute_tool.
     Otherwise, route to respond (end).
+    Includes recursion guard: stops after MAX_TOOL_LOOPS tool executions.
     """
     messages = state.get("messages", [])
     if not messages:
+        return "respond"
+
+    # Count how many [Tool Results] messages exist (each represents one tool loop)
+    tool_result_count = sum(
+        1 for m in messages
+        if getattr(m, "content", "").startswith("[Tool Results]")
+    )
+    if tool_result_count >= MAX_TOOL_LOOPS:
         return "respond"
 
     last_msg = messages[-1]

@@ -1,11 +1,15 @@
 """Portfolio income and dividend yield analysis tool."""
 
+from core.tools.filter_utils import FILTER_SCHEMA_PROPERTIES
+
 INCOME_ANALYSIS_SCHEMA = {
     "name": "income_analysis",
-    "description": "Analyze portfolio dividend yield, estimated annual/monthly income, income type classification (Canadian dividend, foreign dividend, interest), and tax implications by account type.",
+    "description": "Analyze portfolio dividend yield, estimated annual/monthly income, income type classification (Canadian dividend, foreign dividend, interest), and tax implications by account type. Supports optional filter to narrow analysis.",
     "parameters": {
         "type": "object",
-        "properties": {},
+        "properties": {
+            **FILTER_SCHEMA_PROPERTIES,
+        },
         "required": [],
     },
 }
@@ -50,7 +54,8 @@ def _classify_income_type(holding: dict) -> str:
 
 def income_analysis(args: dict, state: dict) -> dict:
     """Analyze portfolio income: yield, estimated income, tax implications."""
-    households = state.get("households", [])
+    from core.tools.filter_utils import apply_holding_filter
+    households = apply_holding_filter(state.get("households", []), args.get("filter"))
 
     if not households:
         return {"error": "No household data available. Please upload a brokerage statement first."}
@@ -175,6 +180,39 @@ def income_analysis(args: dict, state: dict) -> dict:
             "title": "Annual Income by Holding",
             "data": [{"label": h["symbol"], "value": h["annual_income"]} for h in holdings_income[:10]],
             "confidence": 0.75,
+        })
+
+    # SEC Yield table (Phase 5) - show when any holdings have 7-day or 30-day SEC yield
+    sec_yield_rows = []
+    for household in households:
+        for account in household.get("accounts", []):
+            for holding in account.get("holdings", []):
+                sy7 = holding.get("sec_yield_7day")
+                sy30 = holding.get("sec_yield_30day")
+                if sy7 or sy30:
+                    sec_yield_rows.append({
+                        "symbol": holding.get("symbol", ""),
+                        "name": (holding.get("name", "") or "")[:25],
+                        "sec_yield_7day": f"{sy7:.2f}%" if sy7 else "—",
+                        "sec_yield_30day": f"{sy30:.2f}%" if sy30 else "—",
+                        "div_yield": f"{holding.get('dividend_yield', 0):.2f}%",
+                    })
+
+    if sec_yield_rows:
+        new_widgets.append({
+            "type": "table",
+            "title": "Standardized SEC Yields",
+            "data": {
+                "columns": [
+                    {"key": "symbol", "label": "Symbol", "format": "text"},
+                    {"key": "name", "label": "Name", "format": "text"},
+                    {"key": "sec_yield_7day", "label": "7-Day SEC Yield", "format": "text"},
+                    {"key": "sec_yield_30day", "label": "30-Day SEC Yield", "format": "text"},
+                    {"key": "div_yield", "label": "Dist. Yield", "format": "text"},
+                ],
+                "rows": sec_yield_rows,
+            },
+            "confidence": 0.7,
         })
 
     return {

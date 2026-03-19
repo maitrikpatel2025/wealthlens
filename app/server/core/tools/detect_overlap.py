@@ -44,6 +44,30 @@ def detect_overlap(args: dict, state: dict) -> dict:
         if len(entries) > 1
     }
 
+    # Build widgets
+    new_widgets = []
+    if overlaps:
+        rows = []
+        for sym, entries in overlaps.items():
+            accounts_str = ", ".join(e["account"] for e in entries)
+            total = round(sum(e["market_value"] for e in entries), 2)
+            rows.append({"symbol": sym, "accounts": accounts_str, "total_value": total, "occurrences": len(entries)})
+        rows.sort(key=lambda x: -x["total_value"])
+        new_widgets.append({
+            "type": "table",
+            "title": "Overlapping Holdings Across Accounts",
+            "data": {
+                "columns": [
+                    {"key": "symbol", "label": "Symbol", "format": "text"},
+                    {"key": "accounts", "label": "Accounts", "format": "text"},
+                    {"key": "total_value", "label": "Combined Value", "format": "currency"},
+                    {"key": "occurrences", "label": "Count", "format": "number"},
+                ],
+                "rows": rows,
+            },
+            "confidence": 0.8,
+        })
+
     return {
         "overlap_count": len(overlaps),
         "overlaps": {
@@ -53,4 +77,5 @@ def detect_overlap(args: dict, state: dict) -> dict:
             }
             for sym, entries in overlaps.items()
         },
+        "new_widgets": new_widgets,
     }

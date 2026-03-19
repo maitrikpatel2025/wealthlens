@@ -15,11 +15,11 @@ export function ToolLogs({ logs }: ToolLogsProps) {
       {logs.map((log) => (
         <div
           key={log.id}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 border text-sm font-medium font-['Roobert'] shadow-sm transition-colors
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 border text-sm font-medium shadow-sm transition-colors
             ${
               log.status === "processing"
-                ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                : "bg-green-50 border-green-200 text-green-800"
+                ? "bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300"
+                : "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300"
             }
           `}
         >
@@ -31,7 +31,7 @@ export function ToolLogs({ logs }: ToolLogsProps) {
           ) : (
             <Check size={18} className="text-green-600" />
           )}
-          <span className="text-xs font-semibold font-['Plus_Jakarta_Sans']">{log.message}</span>
+          <span className="text-xs font-semibold">{log.message}</span>
         </div>
       ))}
     </div>

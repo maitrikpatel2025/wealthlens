@@ -31,7 +31,7 @@ export function LineWidget({ data }: LineWidgetProps) {
     return (
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={flatData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.2} />
           <XAxis dataKey="x" tick={{ fontSize: 11, fill: "#64748b" }} />
           <YAxis tick={{ fontSize: 11, fill: "#64748b" }} />
           <Tooltip
@@ -59,7 +59,7 @@ export function LineWidget({ data }: LineWidgetProps) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.2} />
         <XAxis dataKey="x" tick={{ fontSize: 11, fill: "#64748b" }} />
         <YAxis tick={{ fontSize: 11, fill: "#64748b" }} />
         <Tooltip
