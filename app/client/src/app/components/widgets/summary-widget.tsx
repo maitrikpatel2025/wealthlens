@@ -22,9 +22,9 @@ export function SummaryWidget({ data }: SummaryWidgetProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
       {metrics.map((metric: any) => (
-        <div key={metric.label} className="rounded-lg bg-slate-50 p-3">
-          <p className="text-xs text-slate-500 mb-1">{metric.label}</p>
-          <p className="text-lg font-bold text-slate-900">{formatValue(metric)}</p>
+        <div key={metric.label} className="rounded-lg bg-slate-50 dark:bg-slate-800 p-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{metric.label}</p>
+          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{formatValue(metric)}</p>
           {metric.change !== undefined && (
             <div className={`flex items-center gap-1 text-xs mt-1 ${metric.change >= 0 ? "text-emerald-600" : "text-red-500"}`}>
               {metric.change >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}

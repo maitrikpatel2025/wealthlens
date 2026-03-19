@@ -6,17 +6,29 @@ import { TableData, TableColumn } from "@/types/widgets";
 
 interface TableWidgetProps {
   data: TableData;
+  onRowClick?: (rowData: Record<string, any>) => void;
 }
 
 function formatCell(value: string | number, format?: string): string {
   if (value === undefined || value === null) return "—";
-  if (format === "currency") return `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (format === "percent") return `${Number(value).toFixed(2)}%`;
-  if (format === "number") return Number(value).toLocaleString();
+  if (typeof value === "string" && (value === "—" || value === "N/A" || value === "")) return value || "—";
+  const num = Number(value);
+  if (format === "currency") {
+    if (isNaN(num)) return String(value);
+    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (format === "percent") {
+    if (isNaN(num)) return "—";
+    return `${num.toFixed(2)}%`;
+  }
+  if (format === "number") {
+    if (isNaN(num)) return String(value);
+    return num.toLocaleString();
+  }
   return String(value);
 }
 
-export function TableWidget({ data: rawData }: TableWidgetProps) {
+export function TableWidget({ data: rawData, onRowClick }: TableWidgetProps) {
   // Normalize: handle multiple data shapes
   const data: TableData = (() => {
     const d = rawData as any;
@@ -73,13 +85,13 @@ export function TableWidget({ data: rawData }: TableWidgetProps) {
   return (
     <div className="overflow-auto max-h-[300px]">
       <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-slate-50">
+        <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
           <tr>
             {data.columns.map((col) => (
               <th
                 key={col.key}
                 onClick={() => handleSort(col.key)}
-                className="text-left px-3 py-2 text-xs font-semibold text-slate-500 cursor-pointer hover:text-slate-700 select-none"
+                className="text-left px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
               >
                 <span className="inline-flex items-center gap-1">
                   {col.label}
@@ -93,9 +105,13 @@ export function TableWidget({ data: rawData }: TableWidgetProps) {
         </thead>
         <tbody>
           {sortedRows.map((row, i) => (
-            <tr key={i} className="border-t border-slate-100 hover:bg-slate-50">
+            <tr
+              key={i}
+              className={`border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50${onRowClick ? " cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950/20" : ""}`}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+            >
               {data.columns.map((col) => (
-                <td key={col.key} className="px-3 py-2 text-slate-700">
+                <td key={col.key} className="px-3 py-2 text-slate-700 dark:text-slate-300">
                   {formatCell(row[col.key], col.format)}
                 </td>
               ))}

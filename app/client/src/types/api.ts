@@ -19,6 +19,22 @@ export interface HoldingData {
   beta?: number | null;
   dividend_yield?: number | null;
   pe_ratio?: number | null;
+  // Fundamentals
+  price_to_book?: number | null;
+  price_to_sales?: number | null;
+  roe?: number | null;
+  roa?: number | null;
+  debt_to_equity?: number | null;
+  forward_pe?: number | null;
+  // Style classification
+  style_class?: string;
+  // Fee detail
+  gross_expense_ratio?: number | null;
+  front_load?: number | null;
+  deferred_load?: number | null;
+  // Standardized yields
+  sec_yield_7day?: number | null;
+  sec_yield_30day?: number | null;
 }
 
 export interface AccountData {

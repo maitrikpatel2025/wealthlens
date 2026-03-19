@@ -91,7 +91,7 @@ export function SankeyWidget({ data }: SankeyWidgetProps) {
             y={pos.y + pos.h / 2}
             dominantBaseline="middle"
             fontSize={10}
-            fill="#475569"
+            className="fill-slate-600 dark:fill-slate-400"
           >
             {nodes[Number(ni)]?.name ?? ""}
           </text>

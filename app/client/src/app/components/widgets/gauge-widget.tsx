@@ -48,7 +48,7 @@ export function GaugeWidget({ data }: GaugeWidgetProps) {
         <path
           d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
           fill="none"
-          stroke="#e2e8f0"
+          className="stroke-slate-200 dark:stroke-slate-700"
           strokeWidth="16"
           strokeLinecap="round"
         />
@@ -63,15 +63,15 @@ export function GaugeWidget({ data }: GaugeWidgetProps) {
           />
         )}
         {/* Value text */}
-        <text x={cx} y={cy - 10} textAnchor="middle" className="text-2xl font-bold" fill="#0f172a">
+        <text x={cx} y={cy - 10} textAnchor="middle" className="text-2xl font-bold fill-slate-900 dark:fill-slate-100">
           {value}
         </text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="text-xs" fill="#64748b">
+        <text x={cx} y={cy + 10} textAnchor="middle" className="text-xs fill-slate-500 dark:fill-slate-400">
           {label}
         </text>
         {/* Min/Max labels */}
-        <text x={cx - r} y={cy + 20} textAnchor="middle" className="text-[10px]" fill="#94a3b8">{min}</text>
-        <text x={cx + r} y={cy + 20} textAnchor="middle" className="text-[10px]" fill="#94a3b8">{max}</text>
+        <text x={cx - r} y={cy + 20} textAnchor="middle" className="text-[10px] fill-slate-400 dark:fill-slate-500">{min}</text>
+        <text x={cx + r} y={cy + 20} textAnchor="middle" className="text-[10px] fill-slate-400 dark:fill-slate-500">{max}</text>
       </svg>
     </div>
   );

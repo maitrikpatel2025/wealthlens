@@ -7,9 +7,10 @@ const DEFAULT_COLORS = ["#059669", "#0284c7", "#d97706", "#dc2626", "#7c3aed", "
 
 interface PieWidgetProps {
   data: PieData;
+  onSliceClick?: (slice: { name: string; value: number }) => void;
 }
 
-export function PieWidget({ data }: PieWidgetProps) {
+export function PieWidget({ data, onSliceClick }: PieWidgetProps) {
   // Normalize data: accept both {name, value} and {label, value} formats
   const normalized = data.map((entry: any) => ({
     ...entry,
@@ -28,6 +29,11 @@ export function PieWidget({ data }: PieWidgetProps) {
           dataKey="value"
           nameKey="name"
           paddingAngle={2}
+          onClick={onSliceClick ? (_data: any, index: number) => {
+            const entry = normalized[index];
+            if (entry) onSliceClick({ name: entry.name, value: entry.value });
+          } : undefined}
+          style={onSliceClick ? { cursor: "pointer" } : undefined}
         >
           {normalized.map((entry, i) => (
             <Cell key={`${entry.name}-${i}`} fill={entry.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]} />

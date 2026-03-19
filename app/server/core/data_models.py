@@ -31,6 +31,7 @@ class WealthLensState(CopilotKitState):
     plan: list
     extraction_results: list
     enrichment_cache: dict
+    user_profile: dict
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +55,22 @@ class HoldingData(BaseModel):
     beta: Optional[float] = None
     dividend_yield: Optional[float] = None
     pe_ratio: Optional[float] = None
+    # Fundamentals (Phase 1)
+    price_to_book: Optional[float] = None
+    price_to_sales: Optional[float] = None
+    roe: Optional[float] = None
+    roa: Optional[float] = None
+    debt_to_equity: Optional[float] = None
+    forward_pe: Optional[float] = None
+    # Style classification
+    style_class: str = ""  # "Value" | "Blend" | "Growth"
+    # Fee detail
+    gross_expense_ratio: Optional[float] = None
+    front_load: Optional[float] = None
+    deferred_load: Optional[float] = None
+    # Standardized yields
+    sec_yield_7day: Optional[float] = None
+    sec_yield_30day: Optional[float] = None
 
 
 class AccountData(BaseModel):
@@ -138,6 +155,9 @@ class FeeBreakdownItem(BaseModel):
     mer_percent: float = 0
     annual_fee: float = 0
     account: str = ""
+    gross_expense_ratio: Optional[float] = None
+    front_load: Optional[float] = None
+    deferred_load: Optional[float] = None
 
 
 class FeeAlternative(BaseModel):
@@ -242,3 +262,46 @@ class IncomeResult(ToolResult):
     income_by_type: list[IncomeTypeBreakdown] = Field(default_factory=list)
     income_by_account: list[IncomeAccountBreakdown] = Field(default_factory=list)
     tax_notes: list[TaxNote] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Advanced result types (Phases 2-4)
+# ---------------------------------------------------------------------------
+
+
+class AdvancedRiskMetrics(ToolResult):
+    """Return shape for advanced_risk_metrics."""
+    period: str = ""
+    benchmark: str = ""
+    portfolio_annualized_return: float = 0
+    benchmark_annualized_return: float = 0
+    portfolio_std_dev: float = 0
+    benchmark_std_dev: float = 0
+    sharpe_ratio: Optional[float] = None
+    sortino_ratio: Optional[float] = None
+    max_drawdown: Optional[float] = None
+    var_5pct: Optional[float] = None
+    alpha: Optional[float] = None
+    monthly_returns: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class HoldingPerformanceRow(BaseModel):
+    """A single holding's annualized return data."""
+    symbol: str = ""
+    name: str = ""
+    weight_pct: float = 0
+    current_price: float = 0
+    return_1y: Optional[float] = None
+    return_3y: Optional[float] = None
+    return_5y: Optional[float] = None
+    return_10y: Optional[float] = None
+    return_all: Optional[float] = None
+
+
+class BondAnalyticsResult(ToolResult):
+    """Return shape for bond_analytics."""
+    total_fixed_income_value: float = 0
+    fixed_income_pct: float = 0
+    sector_breakdown: list[BreakdownItem] = Field(default_factory=list)
+    credit_quality: list[BreakdownItem] = Field(default_factory=list)
+    maturity_breakdown: list[BreakdownItem] = Field(default_factory=list)

@@ -50,9 +50,33 @@ def detect_concentration(args: dict, state: dict) -> dict:
     ]
     concentrated.sort(key=lambda x: -x["percentage"])
 
+    # Build widgets
+    new_widgets = []
+    if concentrated:
+        new_widgets.append({
+            "type": "bar",
+            "title": f"Concentrated Positions (>{threshold}%)",
+            "data": [{"label": c["symbol"], "value": c["percentage"]} for c in concentrated],
+            "confidence": 0.8,
+        })
+        new_widgets.append({
+            "type": "table",
+            "title": "Concentration Details",
+            "data": {
+                "columns": [
+                    {"key": "symbol", "label": "Symbol", "format": "text"},
+                    {"key": "value", "label": "Market Value", "format": "currency"},
+                    {"key": "percentage", "label": "% of Portfolio", "format": "percent"},
+                ],
+                "rows": concentrated,
+            },
+            "confidence": 0.8,
+        })
+
     return {
         "threshold_percent": threshold,
         "total_value": round(grand_total, 2),
         "concentrated_holdings": concentrated,
         "concentrated_count": len(concentrated),
+        "new_widgets": new_widgets,
     }

@@ -2,20 +2,23 @@
 
 import { useState } from "react";
 import { WidgetSpec } from "@/types/widgets";
-import { SuggestionCards } from "./suggestion-cards";
+import { SmartSuggestionCards } from "./smart-suggestion-cards";
 import { WidgetRenderer } from "./widgets/widget-renderer";
 import { ExpandModal } from "./widgets/expand-modal";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, FlaskConical } from "lucide-react";
 
 interface DashboardCanvasProps {
   widgets: WidgetSpec[];
+  households: any[];
   onSuggestionSelect: (prompt: string) => void;
   onUploadClick: () => void;
   onRemoveWidget: (widgetId: string) => void;
   onAskAboutWidget: (widget: WidgetSpec) => void;
+  onDataPointClick?: (widget: WidgetSpec, dataPoint: Record<string, any>) => void;
+  onSimulateClick?: () => void;
 }
 
-export function DashboardCanvas({ widgets, onSuggestionSelect, onUploadClick, onRemoveWidget, onAskAboutWidget }: DashboardCanvasProps) {
+export function DashboardCanvas({ widgets, households, onSuggestionSelect, onUploadClick, onRemoveWidget, onAskAboutWidget, onDataPointClick, onSimulateClick }: DashboardCanvasProps) {
   const [expandedWidget, setExpandedWidget] = useState<WidgetSpec | null>(null);
   const hasWidgets = widgets && widgets.length > 0;
 
@@ -46,7 +49,7 @@ export function DashboardCanvas({ widgets, onSuggestionSelect, onUploadClick, on
             Upload a brokerage statement or ask a question to generate your personalized portfolio dashboard.
           </p>
         </div>
-        <SuggestionCards onSelect={onSuggestionSelect} onUploadClick={onUploadClick} />
+        <SmartSuggestionCards households={households} widgets={widgets} onSelect={onSuggestionSelect} onUploadClick={onUploadClick} />
       </div>
     );
   }
@@ -59,6 +62,16 @@ export function DashboardCanvas({ widgets, onSuggestionSelect, onUploadClick, on
           Dashboard ({widgets.length} widget{widgets.length !== 1 ? "s" : ""})
         </h2>
         <div className="flex items-center gap-2">
+          {onSimulateClick && (
+            <button
+              onClick={onSimulateClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title="Simulate portfolio changes"
+            >
+              <FlaskConical size={14} />
+              Simulate
+            </button>
+          )}
           <button
             onClick={handleExportJSON}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -85,8 +98,17 @@ export function DashboardCanvas({ widgets, onSuggestionSelect, onUploadClick, on
           onExpand={setExpandedWidget}
           onRemove={onRemoveWidget}
           onAskAbout={onAskAboutWidget}
+          onDataPointClick={onDataPointClick}
         />
       </div>
+
+      {/* Suggested next */}
+      {households && households.length > 0 && (
+        <div className="px-6 pb-6">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Suggested next</p>
+          <SmartSuggestionCards households={households} widgets={widgets} onSelect={onSuggestionSelect} onUploadClick={() => {}} />
+        </div>
+      )}
 
       {expandedWidget && (
         <ExpandModal

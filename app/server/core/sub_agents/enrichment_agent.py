@@ -162,6 +162,20 @@ async def _enrich_single(holding: dict, cache: dict) -> dict:
         else:
             market_data["market_cap_class"] = "Small Cap"
 
+    # Classify style (Value / Blend / Growth) — check ETF overrides first
+    clean_sym = symbol.upper().replace(".TO", "")
+    if clean_sym in ETF_STYLE_OVERRIDES:
+        override_cap, override_style = ETF_STYLE_OVERRIDES[clean_sym]
+        market_data["market_cap_class"] = market_data.get("market_cap_class") or override_cap
+        market_data["style_class"] = override_style
+    else:
+        style = _classify_style(
+            market_data.get("pe_ratio") or enriched.get("pe_ratio"),
+            market_data.get("price_to_book") or enriched.get("price_to_book"),
+        )
+        if style:
+            market_data["style_class"] = style
+
     enriched.update(market_data)
     return enriched
 
@@ -367,6 +381,54 @@ async def _fetch_yfinance(symbol: str) -> dict:
             if low_52 and isinstance(low_52, (int, float)):
                 data["fifty_two_week_low"] = round(float(low_52), 2)
 
+            # --- Fundamental fields (Phase 1) ---
+            ptb = info.get("priceToBook")
+            if ptb and isinstance(ptb, (int, float)) and ptb > 0:
+                data["price_to_book"] = round(float(ptb), 2)
+
+            pts = info.get("priceToSalesTrailing12Months")
+            if pts and isinstance(pts, (int, float)) and pts > 0:
+                data["price_to_sales"] = round(float(pts), 2)
+
+            roe_val = info.get("returnOnEquity")
+            if roe_val and isinstance(roe_val, (int, float)):
+                data["roe"] = round(float(roe_val) * 100, 2)
+
+            roa_val = info.get("returnOnAssets")
+            if roa_val and isinstance(roa_val, (int, float)):
+                data["roa"] = round(float(roa_val) * 100, 2)
+
+            dte = info.get("debtToEquity")
+            if dte and isinstance(dte, (int, float)):
+                data["debt_to_equity"] = round(float(dte), 2)
+
+            fpe = info.get("forwardPE")
+            if fpe and isinstance(fpe, (int, float)) and fpe > 0:
+                data["forward_pe"] = round(float(fpe), 2)
+
+            # Gross expense ratio (separate from net MER)
+            ger = info.get("grossExpenseRatio") or info.get("annualReportExpenseRatio")
+            if ger and isinstance(ger, (int, float)) and ger > 0:
+                data["gross_expense_ratio"] = round(float(ger) * 100, 3)
+
+            # Fund load fees
+            fl = info.get("maxFrontEndSalesLoad") or info.get("frontEndSalesLoad")
+            if fl and isinstance(fl, (int, float)) and fl > 0:
+                data["front_load"] = round(float(fl) * 100, 2)
+
+            dl = info.get("maxDeferredSalesLoad") or info.get("deferredSalesLoad")
+            if dl and isinstance(dl, (int, float)) and dl > 0:
+                data["deferred_load"] = round(float(dl) * 100, 2)
+
+            # SEC yields
+            sy7 = info.get("sevenDayYield")
+            if sy7 and isinstance(sy7, (int, float)):
+                data["sec_yield_7day"] = round(float(sy7) * 100, 2)
+
+            sy30 = info.get("thirtyDayYield")
+            if sy30 and isinstance(sy30, (int, float)):
+                data["sec_yield_30day"] = round(float(sy30) * 100, 2)
+
     except Exception as e:
         print(f"yfinance error for {query_symbol}: {e}")
 
@@ -410,6 +472,62 @@ def _infer_asset_class_from_name(name: str, symbol: str) -> str:
     if "index" in name_lower or "etf" in name_lower:
         return "ETF"
     return "Unknown"
+
+
+def _classify_style(pe: float | None, pb: float | None) -> str:
+    """Classify investment style using P/E + P/B thresholds.
+    Value: low P/E (<15) or low P/B (<1.5)
+    Growth: high P/E (>25) or high P/B (>4)
+    Blend: everything else
+    """
+    if pe is None and pb is None:
+        return ""
+    score = 0  # negative = value, positive = growth
+    if pe is not None:
+        if pe < 15:
+            score -= 1
+        elif pe > 25:
+            score += 1
+    if pb is not None:
+        if pb < 1.5:
+            score -= 1
+        elif pb > 4:
+            score += 1
+    if score < 0:
+        return "Value"
+    elif score > 0:
+        return "Growth"
+    return "Blend"
+
+
+# Well-known ETF style overrides for multi-asset/balanced ETFs
+# that don't have meaningful P/E/P/B at the fund level
+ETF_STYLE_OVERRIDES = {
+    "VGRO": ("Mid Cap", "Blend"),
+    "VBAL": ("Mid Cap", "Blend"),
+    "XGRO": ("Mid Cap", "Blend"),
+    "XBAL": ("Mid Cap", "Blend"),
+    "ZGRO": ("Mid Cap", "Blend"),
+    "ZBAL": ("Mid Cap", "Blend"),
+    "VCNS": ("Mid Cap", "Blend"),
+    "VCIP": ("Mid Cap", "Blend"),
+    "VEQT": ("Large Cap", "Blend"),
+    "XEQT": ("Large Cap", "Blend"),
+    "VFV": ("Large Cap", "Growth"),
+    "VOO": ("Large Cap", "Growth"),
+    "SPY": ("Large Cap", "Growth"),
+    "XIU": ("Large Cap", "Blend"),
+    "XIC": ("Large Cap", "Blend"),
+    "VCN": ("Large Cap", "Blend"),
+    "ZCN": ("Large Cap", "Blend"),
+    "VUN": ("Large Cap", "Growth"),
+    "XUS": ("Large Cap", "Growth"),
+    "QQC": ("Large Cap", "Growth"),
+    "XEF": ("Large Cap", "Blend"),
+    "VIU": ("Large Cap", "Blend"),
+    "VEE": ("Mid Cap", "Blend"),
+    "XEM": ("Mid Cap", "Blend"),
+}
 
 
 def _infer_geographic_exposure(name: str, symbol: str) -> str:
