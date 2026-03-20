@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 from pydantic import BaseModel, Field
-from copilotkit import CopilotKitState
+from typing_extensions import TypedDict
 
 
 # ---------------------------------------------------------------------------
@@ -20,7 +20,7 @@ from copilotkit import CopilotKitState
 # ---------------------------------------------------------------------------
 
 
-class WealthLensState(CopilotKitState):
+class WealthLensState(TypedDict, total=False):
     """Agent state for WealthLens."""
     tools: list
     messages: list

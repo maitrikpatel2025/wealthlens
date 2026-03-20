@@ -118,7 +118,8 @@ def _format_messages(state: dict) -> list:
     return formatted
 
 
-async def planner_node(state: WealthLensState, config: dict) -> dict:
+async def planner_node(state: WealthLensState, config: dict = None) -> dict:
+    config = config or {}
     """
     Planner: analyzes the conversation and decides whether to call a tool or respond.
     Returns updated messages with assistant response.
@@ -167,7 +168,8 @@ def router(state: WealthLensState) -> Literal["execute_tool", "respond"]:
     return "respond"
 
 
-async def execute_tool_node(state: WealthLensState, config: dict) -> dict:
+async def execute_tool_node(state: WealthLensState, config: dict = None) -> dict:
+    config = config or {}
     """
     Extract and execute ALL tool calls from assistant message.
     Tools that return 'new_widgets' auto-add widgets to the dashboard.
@@ -256,7 +258,7 @@ async def execute_tool_node(state: WealthLensState, config: dict) -> dict:
     }
 
 
-async def respond_node(state: WealthLensState, config: dict) -> dict:
+async def respond_node(state: WealthLensState, config: dict = None) -> dict:
     """Terminal node — the planner's last message is the response."""
     return {}
 
