@@ -13,6 +13,7 @@ interface TopNavProps {
   onNewChat?: () => void;
   onToggleTheme?: () => void;
   onSignIn?: () => void;
+  onSignOut?: () => void;
   onTitleChange?: (title: string) => void;
   showHamburger?: boolean;
 }
@@ -27,6 +28,7 @@ export function TopNav({
   onNewChat,
   onToggleTheme,
   onSignIn,
+  onSignOut,
   onTitleChange,
   showHamburger = false,
 }: TopNavProps) {
@@ -150,16 +152,26 @@ export function TopNav({
                 Sign in
               </button>
             ) : (
-              <button
-                className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-200 transition-colors hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600"
-                aria-label={isLoggedIn ? userName || "User menu" : "Account"}
-              >
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  {isLoggedIn && userName
-                    ? userName.charAt(0).toUpperCase()
-                    : "?"}
-                </span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-200 transition-colors hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600"
+                  aria-label={isLoggedIn ? userName || "User menu" : "Account"}
+                >
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {isLoggedIn && userName
+                      ? userName.charAt(0).toUpperCase()
+                      : "?"}
+                  </span>
+                </button>
+                {isLoggedIn && onSignOut && (
+                  <button
+                    onClick={onSignOut}
+                    className="hidden h-8 items-center rounded-lg px-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 sm:flex dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  >
+                    Sign out
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

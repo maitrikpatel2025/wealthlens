@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./app/server
+    ports:
+      - "8000:8000"
+    env_file: ./app/server/.env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+
+  frontend:
+    build: ./app/client
+    ports:
+      - "3000:3000"
+    env_file: ./app/client/.env.local
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:8000

@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 import uuid
 from typing import Any, Optional
@@ -24,40 +25,66 @@ from ag_ui.encoder import EventEncoder
 from core.agent import agent_graph
 from core.data_models import WealthLensState
 from core.constants import MAX_UPLOAD_SIZE_BYTES
+from core.auth import verify_supabase_token, require_auth
 
 
 app = FastAPI()
 
+# CORS
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url)
 
-def extract_user_id(request: Request = None) -> Optional[str]:
-    """Extract user_id from Clerk JWT if available."""
-    if not request:
-        return None
-    auth_header = request.headers.get("authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return None
-    try:
-        import jwt
-        token = auth_header[7:]
-        clerk_secret = os.getenv("CLERK_SECRET_KEY", "")
-        if not clerk_secret:
-            return None
-        payload = jwt.decode(token, options={"verify_signature": False})
-        return payload.get("sub")
-    except Exception:
-        return None
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
 async def startup():
-    """Initialize DB on startup if DATABASE_URL is set."""
-    if os.getenv("DATABASE_URL"):
-        try:
-            from core.db.connection import init_db
-            await init_db()
-            print("Database initialized.")
-        except Exception as e:
-            print(f"DB init skipped: {e}")
+    """Initialize DB on startup."""
+    try:
+        from core.db.connection import init_db
+        await init_db()
+        print("Database initialized.")
+    except Exception as e:
+        print(f"DB init skipped: {e}")
+
+
+@app.get("/user-data")
+async def get_user_data(user_id: str = Depends(require_auth)):
+    """Load persisted portfolios for the authenticated user."""
+    try:
+        from core.db.persistence import load_user_portfolios
+        households = await load_user_portfolios(user_id)
+        return JSONResponse({"households": households})
+    except Exception as e:
+        print(f"Error loading user data: {e}")
+        return JSONResponse({"households": []})
+
+
+@app.delete("/portfolios/{household_id}")
+async def delete_portfolio_endpoint(
+    household_id: str,
+    user_id: str = Depends(require_auth),
+):
+    """Delete a portfolio household."""
+    try:
+        from core.db.persistence import delete_portfolio
+        deleted = await delete_portfolio(user_id, household_id)
+        if not deleted:
+            return JSONResponse({"error": "Not found"}, status_code=404)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 @app.post("/wealthlens-agent")
@@ -238,7 +265,7 @@ async def wealthlens_agent(input_data: RunAgentInput):
 
 
 @app.post("/upload-statement")
-async def upload_statement(file: UploadFile = File(...)):
+async def upload_statement(request: Request, file: UploadFile = File(...)):
     """Upload a brokerage statement PDF for extraction."""
     try:
         if not file.filename or not file.filename.lower().endswith(".pdf"):
@@ -272,6 +299,16 @@ async def upload_statement(file: UploadFile = File(...)):
         }
         dashboard = auto_dashboard({}, {"households": [household]})
         result["widgets"] = dashboard.get("widgets", [])
+
+        # Persist if authenticated
+        user_id = await verify_supabase_token(request)
+        if user_id:
+            try:
+                from core.db.persistence import save_portfolio
+                household_id = await save_portfolio(user_id, result)
+                result["household_id"] = household_id
+            except Exception as e:
+                print(f"Portfolio persistence failed (non-blocking): {e}")
 
         return JSONResponse(result)
 

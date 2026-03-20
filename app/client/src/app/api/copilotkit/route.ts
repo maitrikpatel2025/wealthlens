@@ -10,8 +10,10 @@ import { NextRequest } from "next/server";
 
 const serviceAdapter = new OpenAIAdapter();
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
+
 const wealthlens = new HttpAgent({
-  url: "http://127.0.0.1:8000/wealthlens-agent",
+  url: `${BACKEND_URL}/wealthlens-agent`,
 });
 
 const runtime = new CopilotRuntime({

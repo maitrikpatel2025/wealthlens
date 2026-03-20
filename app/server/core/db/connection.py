@@ -21,24 +21,25 @@ _session_factory = None
 
 
 def get_database_url() -> str:
-    """Get database URL from environment."""
-    return os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./wealthlens.db")
+    """Get database URL from environment (Supabase PostgreSQL connection string)."""
+    return os.getenv("DATABASE_URL", "")
 
 
 async def init_db():
-    """Initialize database engine and create tables."""
+    """Initialize database engine. Schema is managed by Supabase."""
     global _engine, _session_factory
 
     if not HAS_ASYNC:
-        print("Warning: asyncpg/aiosqlite not installed. DB features disabled.")
+        print("Warning: asyncpg not installed. DB features disabled.")
         return
 
     url = get_database_url()
+    if not url:
+        print("Warning: DATABASE_URL not set. DB features disabled.")
+        return
+
     _engine = create_async_engine(url, echo=False)
     _session_factory = sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
-
-    async with _engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
 
 
 @asynccontextmanager
