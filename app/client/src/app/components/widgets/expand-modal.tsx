@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { WidgetSpec, PieData, BarData, LineData, TableData, GaugeData, SummaryData, TreemapData, SankeyData } from "@/types/widgets";
+import { WidgetSpec, PieData, BarData, LineData, TableData, GaugeData, SummaryData, TreemapData, SankeyData, ReportData, GraphData } from "@/types/widgets";
 import { X } from "lucide-react";
 import { PieWidget } from "./pie-widget";
 import { BarWidget } from "./bar-widget";
@@ -11,6 +11,8 @@ import { GaugeWidget } from "./gauge-widget";
 import { SummaryWidget } from "./summary-widget";
 import { TreemapWidget } from "./treemap-widget";
 import { SankeyWidget } from "./sankey-widget";
+import { ReportWidget } from "./report-widget";
+import { GraphWidget } from "./graph-widget";
 
 interface ExpandModalProps {
   widget: WidgetSpec;
@@ -27,6 +29,8 @@ function renderContent(widget: WidgetSpec) {
     case "summary": return <SummaryWidget data={widget.data as SummaryData} />;
     case "treemap": return <TreemapWidget data={widget.data as TreemapData} />;
     case "sankey": return <SankeyWidget data={widget.data as SankeyData} />;
+    case "report": return <ReportWidget data={widget.data as ReportData} />;
+    case "graph": return <GraphWidget data={widget.data as GraphData} />;
     default: return null;
   }
 }

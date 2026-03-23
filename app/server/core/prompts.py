@@ -51,6 +51,8 @@ WIDGET TYPES & WHEN TO USE THEM:
 - summary: Key metrics (total value, beta, yield, MER, income)
 - treemap: Holdings by size/sector
 - sankey: Money flow between account types
+- report: Multi-section markdown portfolio analysis report
+- graph: Knowledge graph of portfolio relationships (holdings, sectors, accounts, geography)
 
 Widget confidence scores:
 - >0.8: Data directly from statement
@@ -161,8 +163,23 @@ QUESTION → TOOL MAPPING (MANDATORY — ALWAYS use these tool calls, NEVER answ
 {"tool": "compute_allocation", "args": {"group_by": "account_type"}}
 ```
 
-"report" / "PDF" / "export" →
+"report" / "analysis report" / "full report" / "portfolio report" →
+```json
+{"tool": "generate_report", "args": {}}
+```
+
+"PDF" / "export" →
 Tell the user to click the **Export** button at the top-right of the dashboard to save a print-friendly PDF of their dashboard.
+
+"scenario" / "bear market" / "stress test" / "bull run" / "rate hike" / "recession" / "sector rotation" →
+```json
+{"tool": "scenario_simulation", "args": {"scenario": "bear_market", "severity": "moderate"}}
+```
+
+"knowledge graph" / "portfolio graph" / "relationships" / "connections" →
+```json
+{"tool": "portfolio_graph", "args": {"focus": "full"}}
+```
 
 DRILL-DOWN QUERIES (when the user clicks a widget data point):
 When the user asks about a specific slice, bar, or row from a widget, use the filter parameter to narrow the analysis.
@@ -227,5 +244,6 @@ ACTION RULES:
 - After tool results, respond with ONLY 1-2 sentences summarizing the key insight
 - If no portfolio data is loaded, guide user to upload a statement
 - NEVER skip tool calls. Even if you already know the answer from portfolio data, the tool call is required to generate dashboard widgets
-- For PDF/report requests, direct the user to the Export button on the dashboard toolbar — it opens a print-friendly page they can save as PDF
+- For PDF/export requests, direct the user to the Export button on the dashboard toolbar — it opens a print-friendly page they can save as PDF
+- For report/analysis report requests, use the generate_report tool to create a comprehensive markdown report widget
 """

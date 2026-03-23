@@ -20,6 +20,17 @@ from typing_extensions import TypedDict
 # ---------------------------------------------------------------------------
 
 
+class AgentActivity(TypedDict, total=False):
+    """A single agent activity entry for the real-time feed."""
+    id: str
+    agent: str           # supervisor | risk_analyst | fee_optimizer | income_analyst | macro_strategist | synthesizer | persona
+    status: str          # active | completed | error
+    message: str         # human-readable status message
+    tool: str            # current tool being executed (optional)
+    started_at: float    # timestamp
+    completed_at: float  # timestamp (optional)
+
+
 class WealthLensState(TypedDict, total=False):
     """Agent state for WealthLens."""
     tools: list
@@ -32,6 +43,12 @@ class WealthLensState(TypedDict, total=False):
     extraction_results: list
     enrichment_cache: dict
     user_profile: dict
+    # Multi-agent fields
+    agent_activities: list          # real-time feed replacing tool_logs
+    analysis_mode: str              # "quick" | "deep"
+    active_specialists: list        # which specialists are currently running
+    specialist_results: dict        # results keyed by specialist name
+    persona_results: list           # investor persona perspectives
 
 
 # ---------------------------------------------------------------------------

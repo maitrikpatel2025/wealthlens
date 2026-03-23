@@ -5,7 +5,9 @@ import { WidgetSpec } from "@/types/widgets";
 import { SmartSuggestionCards } from "./smart-suggestion-cards";
 import { WidgetRenderer } from "./widgets/widget-renderer";
 import { ExpandModal } from "./widgets/expand-modal";
-import { Download, Printer, FlaskConical } from "lucide-react";
+import { Download, Printer, FlaskConical, LayoutDashboard, Columns, MessageSquare, Copy } from "lucide-react";
+
+type LayoutMode = "split" | "dashboard" | "chat";
 
 interface DashboardCanvasProps {
   widgets: WidgetSpec[];
@@ -16,9 +18,11 @@ interface DashboardCanvasProps {
   onAskAboutWidget: (widget: WidgetSpec) => void;
   onDataPointClick?: (widget: WidgetSpec, dataPoint: Record<string, any>) => void;
   onSimulateClick?: () => void;
+  layoutMode?: LayoutMode;
+  onLayoutChange?: (mode: LayoutMode) => void;
 }
 
-export function DashboardCanvas({ widgets, households, onSuggestionSelect, onUploadClick, onRemoveWidget, onAskAboutWidget, onDataPointClick, onSimulateClick }: DashboardCanvasProps) {
+export function DashboardCanvas({ widgets, households, onSuggestionSelect, onUploadClick, onRemoveWidget, onAskAboutWidget, onDataPointClick, onSimulateClick, layoutMode = "split", onLayoutChange }: DashboardCanvasProps) {
   const [expandedWidget, setExpandedWidget] = useState<WidgetSpec | null>(null);
   const hasWidgets = widgets && widgets.length > 0;
 
@@ -57,36 +61,62 @@ export function DashboardCanvas({ widgets, households, onSuggestionSelect, onUpl
   return (
     <div className="h-full overflow-auto">
       {/* Toolbar */}
-      <div className="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-          Dashboard ({widgets.length} widget{widgets.length !== 1 ? "s" : ""})
-        </h2>
-        <div className="flex items-center gap-2">
+      <div className="sticky top-0 z-10 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 hidden sm:block">
+            Dashboard ({widgets.length} widget{widgets.length !== 1 ? "s" : ""})
+          </h2>
+          {/* Layout mode buttons */}
+          {onLayoutChange && (
+            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 p-0.5">
+              {([
+                { mode: "dashboard" as LayoutMode, icon: LayoutDashboard, label: "Dashboard" },
+                { mode: "split" as LayoutMode, icon: Columns, label: "Split" },
+                { mode: "chat" as LayoutMode, icon: MessageSquare, label: "Chat" },
+              ]).map(({ mode, icon: Icon, label }) => (
+                <button
+                  key={mode}
+                  onClick={() => onLayoutChange(mode)}
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                    layoutMode === mode
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  }`}
+                  title={label}
+                >
+                  <Icon size={13} />
+                  <span className="hidden lg:inline">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1 sm:gap-2">
           {onSimulateClick && (
             <button
               onClick={onSimulateClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
               title="Simulate portfolio changes"
             >
               <FlaskConical size={14} />
-              Simulate
+              <span className="hidden sm:inline">Simulate</span>
             </button>
           )}
           <button
             onClick={handleExportJSON}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
             title="Download JSON"
           >
             <Download size={14} />
-            JSON
+            <span className="hidden sm:inline">JSON</span>
           </button>
           <button
             onClick={handleExportPrint}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-lg transition-colors"
             title="Print / PDF"
           >
             <Printer size={14} />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </button>
         </div>
       </div>

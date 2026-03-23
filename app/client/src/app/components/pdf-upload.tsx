@@ -6,13 +6,17 @@ import { Upload, FileText, X, Loader2 } from "lucide-react";
 interface PdfUploadProps {
   onUploadComplete: (result: any) => void;
   onClose: () => void;
+  lastUploadResult?: any;
 }
 
-export function PdfUpload({ onUploadComplete, onClose }: PdfUploadProps) {
+export function PdfUpload({ onUploadComplete, onClose, lastUploadResult }: PdfUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number>(0);
+  const [uploadResult, setUploadResult] = useState<any>(lastUploadResult || null);
+  const [showPreview, setShowPreview] = useState(!!lastUploadResult);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -28,6 +32,7 @@ export function PdfUpload({ onUploadComplete, onClose }: PdfUploadProps) {
 
       setError(null);
       setFileName(file.name);
+      setFileSize(file.size);
       setIsUploading(true);
 
       try {
@@ -44,6 +49,8 @@ export function PdfUpload({ onUploadComplete, onClose }: PdfUploadProps) {
         }
 
         const result = await res.json();
+        setUploadResult(result);
+        setShowPreview(true);
         onUploadComplete(result);
       } catch (err: any) {
         setError(err.message || "Upload failed.");
@@ -146,6 +153,44 @@ export function PdfUpload({ onUploadComplete, onClose }: PdfUploadProps) {
 
         {error && (
           <p className="mt-3 text-sm text-red-500">{error}</p>
+        )}
+
+        {/* Upload preview card */}
+        {showPreview && uploadResult && (
+          <div className="mt-4 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-3">
+            <div className="flex items-start gap-3">
+              <FileText size={20} className="text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                  {fileName || "Uploaded statement"}
+                </p>
+                <div className="flex items-center gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {fileSize > 0 && <span>{(fileSize / 1024).toFixed(0)} KB</span>}
+                  <span>{uploadResult.institution || "Unknown"}</span>
+                  {uploadResult.accounts && (
+                    <span>
+                      {uploadResult.accounts.reduce(
+                        (sum: number, a: any) => sum + (a.holdings?.length || 0),
+                        0
+                      )}{" "}
+                      holdings
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowPreview(false);
+                setUploadResult(null);
+                setFileName(null);
+                setFileSize(0);
+              }}
+              className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+            >
+              Upload another
+            </button>
+          </div>
         )}
 
         <p className="mt-4 text-xs text-slate-400 text-center">

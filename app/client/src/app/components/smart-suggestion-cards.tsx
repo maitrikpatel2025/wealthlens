@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Upload, LayoutDashboard, AlertTriangle, Globe, DollarSign, ShieldCheck, TrendingUp, BarChart3 } from "lucide-react";
+import { Upload, LayoutDashboard, AlertTriangle, Globe, DollarSign, ShieldCheck, TrendingUp, BarChart3, FlaskConical } from "lucide-react";
 import type { WidgetSpec } from "@/types/widgets";
 
 interface SmartSuggestion {
@@ -113,6 +113,14 @@ export function SmartSuggestionCards({ households, widgets, onSelect, onUploadCl
         prompt: "Analyze my portfolio income and dividend yield, including tax implications by account type.",
       });
     }
+
+    // Stress test
+    cards.push({
+      icon: <FlaskConical size={20} />,
+      title: "Stress test",
+      description: "Simulate bear market, recession, or rate hike",
+      prompt: "Stress test my portfolio with a bear market scenario at moderate severity.",
+    });
 
     // Risk checkup
     cards.push({

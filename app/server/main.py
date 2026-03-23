@@ -116,6 +116,11 @@ async def wealthlens_agent(input_data: RunAgentInput):
                         "households": input_data.state.get("households", []),
                         "active_conversation_id": input_data.state.get("active_conversation_id", ""),
                         "user_profile": input_data.state.get("user_profile", {}),
+                        "agent_activities": [],
+                        "analysis_mode": "quick",
+                        "active_specialists": [],
+                        "specialist_results": {},
+                        "persona_results": [],
                     },
                 )
             )
@@ -131,6 +136,11 @@ async def wealthlens_agent(input_data: RunAgentInput):
                 extraction_results=input_data.state.get("extraction_results", []),
                 enrichment_cache=input_data.state.get("enrichment_cache", {}),
                 user_profile=input_data.state.get("user_profile", {}),
+                agent_activities=[],
+                analysis_mode="quick",
+                active_specialists=[],
+                specialist_results={},
+                persona_results=[],
             )
 
             agent = await agent_graph()

@@ -95,7 +95,7 @@ export function SimulationPanel({ isOpen, households, onClose, onRunSimulation }
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <aside className="fixed top-14 right-0 bottom-0 z-50 w-[380px] bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-xl animate-in slide-in-from-right">
+      <aside className="fixed top-14 right-0 bottom-0 z-50 w-full sm:w-[380px] bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-xl animate-in slide-in-from-right">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
           <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">What-If Simulator</h2>

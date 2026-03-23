@@ -6,7 +6,9 @@ export type WidgetType =
   | "gauge"
   | "summary"
   | "treemap"
-  | "sankey";
+  | "sankey"
+  | "report"
+  | "graph";
 
 export interface GridPosition {
   col: number;
@@ -19,7 +21,7 @@ export interface WidgetSpec {
   id: string;
   type: WidgetType;
   title: string;
-  data: PieData | BarData | LineData | TableData | GaugeData | SummaryData | TreemapData | SankeyData;
+  data: PieData | BarData | LineData | TableData | GaugeData | SummaryData | TreemapData | SankeyData | ReportData | GraphData;
   gridPosition?: GridPosition;
   confidence?: number;
 }
@@ -92,4 +94,33 @@ export interface SankeyLink {
 export interface SankeyData {
   nodes: SankeyNode[];
   links: SankeyLink[];
+}
+
+export interface ReportData {
+  markdown: string;
+  generated_at: string;
+  sections: string[];
+  portfolio_value: number;
+}
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: "holding" | "sector" | "asset_class" | "account" | "geography";
+  value: number;
+  weight_pct: number;
+  color: string;
+}
+export interface GraphLink {
+  source: string;
+  target: string;
+  type: "belongs_to" | "held_in" | "exposed_to" | "classified_as";
+  value: number;
+}
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+  total_value: number;
+  node_count: number;
+  link_count: number;
 }

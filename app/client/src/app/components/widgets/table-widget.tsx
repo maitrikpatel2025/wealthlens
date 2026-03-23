@@ -83,8 +83,8 @@ export function TableWidget({ data: rawData, onRowClick }: TableWidgetProps) {
   });
 
   return (
-    <div className="overflow-auto max-h-[300px]">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto max-h-[300px]">
+      <table className="w-full text-sm min-w-[600px]">
         <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
           <tr>
             {data.columns.map((col) => (

@@ -21,6 +21,9 @@ from core.tools.stock_style_analysis import stock_style_analysis, STOCK_STYLE_AN
 from core.tools.portfolio_fundamentals import portfolio_fundamentals, PORTFOLIO_FUNDAMENTALS_SCHEMA
 from core.tools.simulate_rebalance import simulate_rebalance, SIMULATE_REBALANCE_SCHEMA
 from core.tools.goal_score import goal_score, GOAL_SCORE_SCHEMA
+from core.tools.scenario_simulation import scenario_simulation, SCENARIO_SIMULATION_SCHEMA
+from core.tools.generate_report import generate_report, GENERATE_REPORT_SCHEMA
+from core.tools.portfolio_graph import portfolio_graph, PORTFOLIO_GRAPH_SCHEMA
 
 # Name → function mapping
 TOOL_FUNCTIONS = {
@@ -44,6 +47,9 @@ TOOL_FUNCTIONS = {
     "portfolio_fundamentals": portfolio_fundamentals,
     "simulate_rebalance": simulate_rebalance,
     "goal_score": goal_score,
+    "scenario_simulation": scenario_simulation,
+    "generate_report": generate_report,
+    "portfolio_graph": portfolio_graph,
 }
 
 # All tool schemas for LLM function calling
@@ -68,4 +74,7 @@ TOOL_SCHEMAS = [
     PORTFOLIO_FUNDAMENTALS_SCHEMA,
     SIMULATE_REBALANCE_SCHEMA,
     GOAL_SCORE_SCHEMA,
+    SCENARIO_SIMULATION_SCHEMA,
+    GENERATE_REPORT_SCHEMA,
+    PORTFOLIO_GRAPH_SCHEMA,
 ]

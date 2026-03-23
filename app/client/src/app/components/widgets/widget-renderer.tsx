@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, ReactNode, useRef, useState, useEffect } from "react";
-import { WidgetSpec, PieData, BarData, LineData, TableData, GaugeData, SummaryData, TreemapData, SankeyData } from "@/types/widgets";
+import { WidgetSpec, PieData, BarData, LineData, TableData, GaugeData, SummaryData, TreemapData, SankeyData, ReportData, GraphData } from "@/types/widgets";
 import { WidgetWrapper } from "./widget-wrapper";
 import { PieWidget } from "./pie-widget";
 import { BarWidget } from "./bar-widget";
@@ -11,6 +11,8 @@ import { GaugeWidget } from "./gauge-widget";
 import { SummaryWidget } from "./summary-widget";
 import { TreemapWidget } from "./treemap-widget";
 import { SankeyWidget } from "./sankey-widget";
+import { ReportWidget } from "./report-widget";
+import { GraphWidget } from "./graph-widget";
 import { composeDataPointQuestion } from "@/utils/compose-question";
 import { MessageCircle } from "lucide-react";
 
@@ -63,6 +65,7 @@ interface WidgetRendererProps {
   onRemove: (widgetId: string) => void;
   onAskAbout: (widget: WidgetSpec) => void;
   onDataPointClick?: (widget: WidgetSpec, dataPoint: Record<string, any>) => void;
+  onReorder?: (widgets: WidgetSpec[]) => void;
 }
 
 function renderWidgetContent(
@@ -90,6 +93,10 @@ function renderWidgetContent(
       return <TreemapWidget data={widget.data as TreemapData} />;
     case "sankey":
       return <SankeyWidget data={widget.data as SankeyData} />;
+    case "report":
+      return <ReportWidget data={widget.data as ReportData} />;
+    case "graph":
+      return <GraphWidget data={widget.data as GraphData} />;
     default:
       return <p className="text-sm text-slate-400">Unknown widget type: {widget.type}</p>;
   }
@@ -104,17 +111,19 @@ function gridStyle(widget: WidgetSpec): React.CSSProperties {
   };
 }
 
-export function WidgetRenderer({ widgets, onExpand, onRemove, onAskAbout, onDataPointClick }: WidgetRendererProps) {
+export function WidgetRenderer({ widgets, onExpand, onRemove, onAskAbout, onDataPointClick, onReorder }: WidgetRendererProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(2);
   const [pendingPreview, setPendingPreview] = useState<{ widgetId: string; widget: WidgetSpec; dataPoint: Record<string, any> } | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragSrcId = useRef<string | null>(null);
 
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? 0;
-      setCols(width < 500 ? 1 : 2);
+      setCols(width >= 1200 ? 3 : width >= 500 ? 2 : 1);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -125,6 +134,46 @@ export function WidgetRenderer({ widgets, onExpand, onRemove, onAskAbout, onData
       onDataPointClick(pendingPreview.widget, pendingPreview.dataPoint);
     }
     setPendingPreview(null);
+  };
+
+  // Drag-to-reorder handlers
+  const handleDragStart = (e: React.DragEvent, widgetId: string) => {
+    dragSrcId.current = widgetId;
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, widgetId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (widgetId !== dragSrcId.current) {
+      setDragOverId(widgetId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    setDragOverId(null);
+    const srcId = dragSrcId.current;
+    if (!srcId || srcId === targetId || !onReorder) return;
+
+    const reordered = [...widgets];
+    const srcIdx = reordered.findIndex((w) => w.id === srcId);
+    const tgtIdx = reordered.findIndex((w) => w.id === targetId);
+    if (srcIdx === -1 || tgtIdx === -1) return;
+
+    const [moved] = reordered.splice(srcIdx, 1);
+    reordered.splice(tgtIdx, 0, moved);
+    onReorder(reordered);
+    dragSrcId.current = null;
+  };
+
+  const handleDragEnd = () => {
+    dragSrcId.current = null;
+    setDragOverId(null);
   };
 
   return (
@@ -138,9 +187,22 @@ export function WidgetRenderer({ widgets, onExpand, onRemove, onAskAbout, onData
           ? (_w: WidgetSpec, dp: Record<string, any>) => setPendingPreview({ widgetId: widget.id, widget, dataPoint: dp })
           : undefined;
         const isPending = pendingPreview?.widgetId === widget.id;
+        const isDragTarget = dragOverId === widget.id;
 
         return (
-          <div key={widget.id} style={gridStyle(widget)} className="widget-animate-in min-w-0">
+          <div
+            key={widget.id}
+            style={gridStyle(widget)}
+            className={`widget-animate-in min-w-0 transition-all ${
+              isDragTarget ? "ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-slate-950" : ""
+            }`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, widget.id)}
+            onDragOver={(e) => handleDragOver(e, widget.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, widget.id)}
+            onDragEnd={handleDragEnd}
+          >
             <WidgetWrapper
               widget={widget}
               onExpand={onExpand}
